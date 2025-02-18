@@ -1,338 +1,184 @@
-// game.js
-class Game {
-    constructor() {
-        // Canvas setup
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        
-        // DOM elements
-        this.scoreElement = document.getElementById('score');
-        this.comboElement = document.getElementById('combo');
-        this.livesElement = document.getElementById('lives');
-        this.gameOverElement = document.getElementById('game-over');
-        this.finalScoreElement = document.getElementById('final-score');
-        this.highScoreElement = document.getElementById('high-score');
-        this.soundToggle = document.getElementById('sound-toggle');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
 
-        // Canvas dimensions
-        this.canvas.width = 800;
-        this.canvas.height = 600;
+// Set canvas size
+canvas.width = 800;
+canvas.height = 600;
 
-        // Game state
-        this.fruits = [];
-        this.particles = [];
-        this.score = 0;
-        this.combo = 1;
-        this.comboTimer = 0;
-        this.lives = 3;
-        this.gameActive = true;
-        this.lastMousePositions = [];
-        this.difficulty = 1;
-        this.spawnRate = 0.03;
-        this.highScore = localStorage.getItem('highScore') || 0;
+// Game variables
+let fruits = [];
+let particles = [];
+let trail = [];
+let score = 0;
+let mouseX = 0;
+let mouseY = 0;
+let lastMouseX = 0;
+let lastMouseY = 0;
 
-        // Bind event listeners
-        this.bindEvents();
-        
-        // Start game loop
-        this.gameLoop();
-    }
+// Fruit images
+const fruitTypes = ['apple', 'orange', 'watermelon', 'banana'];
+const fruitImages = {};
 
-    bindEvents() {
-        // Mouse movement tracking
-        this.canvas.addEventListener('mousemove', (e) => {
-            const rect = this.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            this.lastMousePositions.push({ x, y, timestamp: Date.now() });
-            if (this.lastMousePositions.length > 10) {
-                this.lastMousePositions.shift();
-            }
-        });
+// Load fruit images
+fruitTypes.forEach(type => {
+    const img = new Image();
+    img.src = `fruits/${type}.png`;
+    fruitImages[type] = img;
+});
 
-        this.canvas.addEventListener('mouseout', () => {
-            this.lastMousePositions = [];
-        });
-
-        // Restart button
-        document.getElementById('restart-btn').addEventListener('click', () => this.restart());
-
-        // Sound toggle
-        this.soundToggle.addEventListener('click', () => {
-            const isMuted = this.soundToggle.textContent === '🔊';
-            this.soundToggle.textContent = isMuted ? '🔇' : '🔊';
-        });
-    }
-
-    createParticles(x, y, color, count = 10) {
-        for (let i = 0; i < count; i++) {
-            this.particles.push(new Particle(x, y, color));
-        }
-    }
-
-    checkSlice() {
-        if (this.lastMousePositions.length < 2) return;
-        
-        const last = this.lastMousePositions[this.lastMousePositions.length - 1];
-        const prev = this.lastMousePositions[this.lastMousePositions.length - 2];
-        
-        this.fruits.forEach(fruit => {
-            if (!fruit.sliced) {
-                const distance = Math.sqrt(
-                    Math.pow(fruit.x - last.x, 2) + 
-                    Math.pow(fruit.y - last.y, 2)
-                );
-                
-                if (distance < fruit.radius + 10) {
-                    fruit.sliced = true;
-                    if (fruit.type === 'bomb') {
-                        this.handleBombSlice(fruit);
-                    } else {
-                        this.handleFruitSlice(fruit);
-                    }
-                }
-            }
-        });
-    }
-
-    handleFruitSlice(fruit) {
-        const points = fruit.points * this.combo;
-        this.score += points;
-        this.combo++;
-        this.comboTimer = 60;
-        this.createParticles(fruit.x, fruit.y, fruit.color);
-        
-        // Show floating score
-        this.showFloatingScore(fruit.x, fruit.y, points);
-        
-        this.updateScore();
-        this.updateCombo();
-    }
-
-    handleBombSlice(bomb) {
-        this.lives--;
-        this.combo = 1;
-        this.createParticles(bomb.x, bomb.y, '#ff4444', 20);
-        this.updateLives();
-        
-        if (this.lives <= 0) {
-            this.gameOver();
-        }
-    }
-
-    showFloatingScore(x, y, points) {
-        const floatingText = document.createElement('div');
-        floatingText.className = 'floating-score';
-        floatingText.textContent = `+${points}`;
-        floatingText.style.left = `${x}px`;
-        floatingText.style.top = `${y}px`;
-        document.body.appendChild(floatingText);
-        
-        setTimeout(() => {
-            document.body.removeChild(floatingText);
-        }, 1000);
-    }
-
-    drawMouseTrail() {
-        if (this.lastMousePositions.length < 2) return;
-
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = 'white';
-        this.ctx.lineWidth = 3;
-        this.ctx.lineCap = 'round';
-        this.ctx.lineJoin = 'round';
-        
-        for (let i = 0; i < this.lastMousePositions.length - 1; i++) {
-            const p1 = this.lastMousePositions[i];
-            const p2 = this.lastMousePositions[i + 1];
-            const progress = i / this.lastMousePositions.length;
-            
-            this.ctx.globalAlpha = progress;
-            this.ctx.moveTo(p1.x, p1.y);
-            this.ctx.lineTo(p2.x, p2.y);
-        }
-        
-        this.ctx.stroke();
-        this.ctx.globalAlpha = 1;
-    }
-
-    spawnFruit() {
-        if (Math.random() < this.spawnRate * this.difficulty) {
-            this.fruits.push(new Fruit(this.canvas.width, this.canvas.height));
-        }
-    }
-
-    updateGame() {
-        // Update difficulty
-        this.difficulty += 0.001;
-
-        // Update fruits
-        this.fruits = this.fruits.filter(fruit => !fruit.isOffScreen());
-        this.fruits.forEach(fruit => fruit.update());
-
-        // Update particles
-        this.particles = this.particles.filter(p => p.life > 0);
-        this.particles.forEach(p => p.update());
-
-        // Update combo timer
-        if (this.comboTimer > 0) {
-            this.comboTimer--;
-            if (this.comboTimer === 0) {
-                this.combo = 1;
-                this.updateCombo();
-            }
-        }
-    }
-
-    drawGame() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw fruits
-        this.fruits.forEach(fruit => fruit.draw(this.ctx));
-        
-        // Draw particles
-        this.particles.forEach(p => p.draw(this.ctx));
-        
-        // Draw mouse trail
-        this.drawMouseTrail();
-    }
-
-    updateScore() {
-        this.scoreElement.textContent = `Score: ${this.score}`;
-    }
-
-    updateCombo() {
-        this.comboElement.textContent = `Combo: x${this.combo}`;
-    }
-
-    updateLives() {
-        this.livesElement.textContent = `Lives: ${'❤️'.repeat(this.lives)}`;
-    }
-
-    gameOver() {
-        this.gameActive = false;
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            localStorage.setItem('highScore', this.highScore);
-        }
-        this.gameOverElement.style.display = 'block';
-        this.finalScoreElement.textContent = this.score;
-        this.highScoreElement.textContent = this.highScore;
-    }
-
-    restart() {
-        this.fruits = [];
-        this.particles = [];
-        this.score = 0;
-        this.combo = 1;
-        this.lives = 3;
-        this.gameActive = true;
-        this.difficulty = 1;
-        this.gameOverElement.style.display = 'none';
-        this.updateScore();
-        this.updateCombo();
-        this.updateLives();
-    }
-
-    gameLoop() {
-        if (this.gameActive) {
-            this.spawnFruit();
-            this.updateGame();
-            this.checkSlice();
-        }
-        
-        this.drawGame();
-        requestAnimationFrame(() => this.gameLoop());
-    }
-}
-
-// Fruit class
 class Fruit {
-    constructor(canvasWidth, canvasHeight) {
-        this.canvasWidth = canvasWidth;
-        this.canvasHeight = canvasHeight;
+    constructor() {
         this.reset();
-        this.radius = 25;
+        this.type = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+        this.radius = 30;
         this.sliced = false;
-        this.type = Math.random() < 0.2 ? 'bomb' : 'fruit';
-        this.color = this.type === 'bomb' ? '#333' : 
-            `hsl(${Math.random() * 360}, 70%, 50%)`;
-        this.points = this.type === 'fruit' ? 
-            (Math.random() < 0.2 ? 2 : 1) : 0;
         this.rotation = 0;
         this.rotationSpeed = (Math.random() - 0.5) * 0.2;
     }
 
     reset() {
-        this.x = Math.random() * this.canvasWidth;
-        this.y = this.canvasHeight + 30;
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + 50;
         this.speedX = (Math.random() - 0.5) * 8;
         this.speedY = -15 - Math.random() * 5;
+        this.gravity = 0.4;
     }
 
     update() {
-        this.speedY += 0.4;
         this.x += this.speedX;
         this.y += this.speedY;
+        this.speedY += this.gravity;
         this.rotation += this.rotationSpeed;
+
+        // Reset if fruit goes off screen
+        if (this.y > canvas.height + 50) {
+            this.reset();
+        }
     }
 
-    draw(ctx) {
+    draw() {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
-
-        // Draw shadow
-        ctx.beginPath();
-        ctx.arc(2, 2, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.fill();
-
-        // Draw fruit/bomb
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-
-        if (this.type === 'bomb') {
-            // Draw fuse
-            ctx.beginPath();
-            ctx.moveTo(0, -this.radius);
-            ctx.quadraticCurveTo(10, -this.radius - 10, 20, -this.radius - 5);
-            ctx.strokeStyle = '#brown';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        }
-
-        if (this.points === 2) {
-            ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        }
-
+        ctx.drawImage(fruitImages[this.type], -this.radius, -this.radius, 
+                     this.radius * 2, this.radius * 2);
         ctx.restore();
-
-        if (this.sliced) {
-            this.drawSlice(ctx);
-        }
-    }
-
-    drawSlice(ctx) {
-        ctx.beginPath();
-        ctx.moveTo(this.x - this.radius, this.y - this.radius);
-        ctx.lineTo(this.x + this.radius, this.y + this.radius);
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    }
-
-    isOffScreen() {
-        return this.y > this.canvasHeight + 50;
     }
 }
 
-// Start the game when the page loads
-window.addEventListener('load', () => {
-    const game = new Game();
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.size = Math.random() * 5 + 2;
+        this.speedX = (Math.random() - 0.5) * 10;
+        this.speedY = (Math.random() - 0.5) * 10;
+        this.gravity = 0.5;
+        this.life = 1;
+        this.decay = 0.02;
+    }
+
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.speedY += this.gravity;
+        this.life -= this.decay;
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.color}, ${this.life})`;
+        ctx.fill();
+    }
+}
+
+// Mouse movement tracking
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    
+    // Add trail points
+    trail.push({x: mouseX, y: mouseY, age: 1});
 });
+
+function createSliceEffect(x, y) {
+    // Create particles
+    for (let i = 0; i < 10; i++) {
+        particles.push(new Particle(x, y, '255, 255, 255'));
+    }
+}
+
+function checkCollision(fruit) {
+    if (fruit.sliced) return;
+
+    const dx = mouseX - lastMouseX;
+    const dy = mouseY - lastMouseY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > 0) {
+        const distToFruit = Math.sqrt(
+            Math.pow(mouseX - fruit.x, 2) + 
+            Math.pow(mouseY - fruit.y, 2)
+        );
+
+        if (distToFruit < fruit.radius) {
+            fruit.sliced = true;
+            score += 10;
+            scoreElement.textContent = `Score: ${score}`;
+            createSliceEffect(fruit.x, fruit.y);
+            setTimeout(() => fruit.reset(), 0);
+        }
+    }
+}
+
+// Initialize fruits
+for (let i = 0; i < 5; i++) {
+    fruits.push(new Fruit());
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Update and draw trail
+    ctx.beginPath();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    trail.forEach((point, index) => {
+        if (index === 0) {
+            ctx.moveTo(point.x, point.y);
+        } else {
+            ctx.lineTo(point.x, point.y);
+        }
+        point.age -= 0.05;
+    });
+    ctx.stroke();
+    trail = trail.filter(point => point.age > 0);
+
+    // Update and draw fruits
+    fruits.forEach(fruit => {
+        fruit.update();
+        fruit.draw();
+        checkCollision(fruit);
+    });
+
+    // Update and draw particles
+    particles.forEach((particle, index) => {
+        particle.update();
+        particle.draw();
+        if (particle.life <= 0) {
+            particles.splice(index, 1);
+        }
+    });
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Start the game
+gameLoop();
