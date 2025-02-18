@@ -40,15 +40,23 @@ class Fruit {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
-    reset() {
-        this.x = Math.random() * (canvas.width - 100) + 50;
-        this.y = canvas.height + 50;
-        this.speedX = (Math.random() - 0.5) * 5;
-        this.speedY = -20 - (Math.random() * 5); // Higher initial velocity
-        this.gravity = 0.4;
-        this.sliced = false;
-        this.active = true;
-    }
+   reset() {
+    this.x = Math.random() * (canvas.width - 100) + 50;
+    this.y = canvas.height + 50;
+    
+    // Slower horizontal movement
+    this.speedX = (Math.random() - 0.5) * 2;  // Reduced from 5 to 2
+    
+    // Lower jump height and slower upward movement
+    this.speedY = -12 - (Math.random() * 3);  // Reduced from -20 to -12
+    
+    // Slower falling speed
+    this.gravity = 0.15;  // Reduced from 0.4 to 0.15
+    
+    this.sliced = false;
+    this.active = true;
+}
+
 
     update() {
         if (!this.active) return;
