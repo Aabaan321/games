@@ -4,6 +4,7 @@
 <head>
     <title>Fruit Ninja Web</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         canvas {
             border: 2px solid #333;
             cursor: none;
@@ -17,33 +18,71 @@
             margin: 0;
             background: #222;
             font-family: Arial, sans-serif;
+            overflow: hidden;
         }
         .hud {
             position: absolute;
             color: white;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             font-size: 24px;
+            z-index: 100;
         }
         #score { top: 20px; left: 20px; }
         #combo { top: 60px; left: 20px; }
         #lives { top: 20px; right: 20px; }
+        #combo-alert {
+            position: absolute;
+            font-size: 48px;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ff6600;
+            display: none;
+            text-align: center;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
         #game-over {
             display: none;
             position: absolute;
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 10px;
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 20px;
             text-align: center;
             color: white;
+            z-index: 1000;
         }
         #restart-btn {
-            padding: 10px 20px;
-            font-size: 18px;
+            padding: 15px 30px;
+            font-size: 20px;
             cursor: pointer;
             background: #4CAF50;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             color: white;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        #restart-btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        #sound-toggle {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+            color: white;
+            font-size: 24px;
+            z-index: 100;
+        }
+        .splash-effect {
+            position: absolute;
+            pointer-events: none;
+            animation: splash 0.5s ease-out forwards;
+        }
+        @keyframes splash {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
         }
     </style>
 </head>
@@ -51,12 +90,19 @@
     <div id="score" class="hud">Score: 0</div>
     <div id="combo" class="hud">Combo: x1</div>
     <div id="lives" class="hud">Lives: ❤️❤️❤️</div>
+    <div id="combo-alert"></div>
     <canvas id="gameCanvas"></canvas>
     <div id="game-over">
         <h2>Game Over!</h2>
         <p>Final Score: <span id="final-score">0</span></p>
+        <p>High Score: <span id="high-score">0</span></p>
         <button id="restart-btn">Play Again</button>
     </div>
+    <div id="sound-toggle">🔊</div>
+    <script src="preload.js"></script>
+    <script src="sprites.js"></script>
+    <script src="sounds.js"></script>
+    <script src="particles.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
