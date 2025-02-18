@@ -26,7 +26,7 @@ class Fruit {
         this.sliced = false;
         this.active = true;
         this.rotation = 0;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.01; // Much slower rotation
     }
 
     getRandomColor() {
@@ -40,23 +40,22 @@ class Fruit {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
-   reset() {
-    this.x = Math.random() * (canvas.width - 100) + 50;
-    this.y = canvas.height + 50;
-    
-    // Slower horizontal movement
-    this.speedX = (Math.random() - 0.5) * 2;  // Reduced from 5 to 2
-    
-    // Lower jump height and slower upward movement
-    this.speedY = -12 - (Math.random() * 3);  // Reduced from -20 to -12
-    
-    // Slower falling speed
-    this.gravity = 0.15;  // Reduced from 0.4 to 0.15
-    
-    this.sliced = false;
-    this.active = true;
-}
-
+    reset() {
+        this.x = Math.random() * (canvas.width - 100) + 50;
+        this.y = canvas.height + 50;
+        
+        // Ultra slow horizontal movement
+        this.speedX = (Math.random() - 0.5) * 0.5;  // Extremely slow horizontal speed
+        
+        // Very gentle upward movement
+        this.speedY = -6 - (Math.random() * 2);     // Much lower jump
+        
+        // Ultra slow falling
+        this.gravity = 0.05;                        // Very slow falling speed
+        
+        this.sliced = false;
+        this.active = true;
+    }
 
     update() {
         if (!this.active) return;
@@ -66,14 +65,14 @@ class Fruit {
         this.speedY += this.gravity;
         this.rotation += this.rotationSpeed;
 
-        // Bounce off walls
+        // Gentle wall bounces
         if (this.x < this.radius) {
             this.x = this.radius;
-            this.speedX *= -0.8;
+            this.speedX *= -0.5; // Softer bounce
         }
         if (this.x > canvas.width - this.radius) {
             this.x = canvas.width - this.radius;
-            this.speedX *= -0.8;
+            this.speedX *= -0.5; // Softer bounce
         }
 
         // Reset if off screen
@@ -82,6 +81,7 @@ class Fruit {
             this.sliced = false;
         }
     }
+
 
     draw() {
         if (!this.active) return;
