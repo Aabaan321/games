@@ -194,11 +194,13 @@ function checkCollision(fruit) {
 }
 
 // Initialize fruits with staggered positions
-for (let i = 0; i < 8; i++) {
+// Initialize fruits with staggered positions
+for (let i = 0; i < 5; i++) { // Reduced from 8 to 5 fruits
     const fruit = new Fruit();
-    fruit.y = canvas.height - (i * (canvas.height / 8));
+    fruit.y = canvas.height - (i * (canvas.height / 5));
     fruits.push(fruit);
 }
+
 
 // Start timer
 const timerInterval = setInterval(() => {
