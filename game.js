@@ -7,7 +7,7 @@ class Game {
         // Game state
         this.score = 0;
         this.highScore = localStorage.getItem('highScore') || 0;
-        this.lives = 3;
+        this.lives = 10;
         this.combo = 1;
         this.comboTimer = 0;
         this.gameState = 'menu';
@@ -25,7 +25,7 @@ class Game {
         // Game settings
         this.fruitSpawnRate = 1500;
         this.lastFruitSpawn = 0;
-        this.gravity = 0.2;
+        this.gravity = 0.01;
         this.difficultyMultiplier = 1;
         
         this.bindEvents();
@@ -76,7 +76,7 @@ class Game {
 
     restartGame() {
         this.score = 0;
-        this.lives = 3;
+        this.lives = 10;
         this.combo = 1;
         this.comboTimer = 0;
         this.fruits = [];
