@@ -18,19 +18,45 @@
             background: #222;
             font-family: Arial, sans-serif;
         }
-        #score {
+        .hud {
             position: absolute;
-            top: 20px;
-            left: 20px;
             color: white;
-            font-size: 32px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 24px;
+        }
+        #score { top: 20px; left: 20px; }
+        #combo { top: 60px; left: 20px; }
+        #lives { top: 20px; right: 20px; }
+        #game-over {
+            display: none;
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+        #restart-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
         }
     </style>
 </head>
 <body>
-    <div id="score">Score: 0</div>
+    <div id="score" class="hud">Score: 0</div>
+    <div id="combo" class="hud">Combo: x1</div>
+    <div id="lives" class="hud">Lives: ❤️❤️❤️</div>
     <canvas id="gameCanvas"></canvas>
+    <div id="game-over">
+        <h2>Game Over!</h2>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button id="restart-btn">Play Again</button>
+    </div>
     <script src="game.js"></script>
 </body>
 </html>
